@@ -1,68 +1,92 @@
 import prisma from "../models/prisma";
 import { FastifyRequest, FastifyReply } from "fastify";
+import { IUser } from "../models/models";
 import pino from "pino";
+import { omitBy, isUndefined } from "lodash";
+import z from "zod";
 
 const logger = pino()
 
-export const createUser = async (request: FastifyRequest, reply: FastifyReply) => {
+export const newUser = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-        const { name, email, password, role } = request.body as any;
-
-    const verifyUser = await prisma.user.findUnique({
-        where: {
-            email
+        const data = req.body as IUser;
+        const verifyUser = await prisma.user.findUnique({
+            where: {
+                email: data.email
+            }
+        })
+        if (verifyUser) {
+            reply.code(400).send({ message: "User already exists" });
+            return;
         }
-    })
-
-    if (verifyUser) {
-        reply.code(400).send({
-            message: "User already exists"
-        });
-        return;
-    }
-
-    const user = await prisma.user.create({
-        data: {
-            name,
-            email,
-            password,
-            role: role
-        }
-    });
-    return {
-        message: "User created successfully",
-        user: logger.info(user)
-    };
+        const newUser = await prisma.user.create({
+            data: {
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                type: data.type || "USER",
+                cpf: data.cpf,
+                address: data.address,
+                phone: data.phone,
+                birthDate: data.birthDate,
+                moreInfo: data.moreInfo,
+            }
+        })
+        reply.code(201).send({
+            message: "Usuário criado com sucesso",
+            data: newUser
+        })
     } catch (error) {
         logger.error(error)
-        return reply.code(500).send({ message: "Error creating user" });
     }
 }
 
-export const updateUser = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getAllUser = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { id } = request.params as { id: string };
-      const { name, email, role } = request.body as any;
-
-      // Verifica se o usuário existe
-      const existingUser = await prisma.user.findUnique({ where: { id } });
-      if (!existingUser) {
-        return reply.code(404).send({ message: "User not found" });
-      }
-
-      // Atualiza os dados
-      const updatedUser = await prisma.user.update({
-        where: { id },
-        data: { name, email, role },
-      });
-
-      return reply.send(updatedUser);
+        const getAllUser = await prisma.user.findMany()
+        console.log("LOADING ALL USERS... AWAIT PLEASE")
+        reply.send(getAllUser)
     } catch (error) {
-      return reply.code(500).send({ message: "Error updating user" });
+        logger.error(error)
     }
-  };
+}
 
-export const getUsers = async (request: FastifyRequest, reply: FastifyReply) => {
-    const users = await prisma.user.findMany();
-    return users;
+// Esquema de validação
+const updateUserSchema = z.object({
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+    password: z.string().min(6).optional(),
+    type: z.enum(["ADMIN", "USER", "PATIENT", "MEDIC", "ASSISTENT"]).optional(),
+    cpf: z.string().optional(),
+    address: z.string().optional(),
+    phone: z.string().optional(),
+    birthDate: z.string().optional(), // Se estiver em formato ISO
+    moreInfo: z.string().optional(),
+});
+
+export const updateUser = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+        const { id } = req.params as any;
+        console.log(id)
+        const userExists = await prisma.user.findUnique({ where: { id: id } });
+        console.log(userExists)
+        if (!userExists) {
+            return reply.status(404).send({ message: "User not found" });
+        }
+        // Valida os dados da requisição
+        const parsedData = updateUserSchema.parse(req.body);
+        const data = req.body as IUser;
+        // Remove campos undefined
+        const sanitizedData = omitBy(parsedData, isUndefined);
+
+        await prisma.user.update({
+            where: {
+                id: id
+            },
+            data: sanitizedData,
+        })
+        reply.send("User updated successfully")
+    } catch (error) {
+        logger.error(error)
+    }
 }

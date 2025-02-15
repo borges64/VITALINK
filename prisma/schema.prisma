@@ -13,66 +13,54 @@ datasource db {
   url      = "file:./dev.db" // Aqui estamos definindo o banco de dados SQLite para ser armazenado em um arquivo chamado dev.db
 }
 
-
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(MEDIC) // Correção aqui
-  createdAt DateTime @default(now())
-  updatedAt DateTime? @updatedAt
-
-  // Relacionamentos
-  consultations ScheduledConsultation[]
-  medicalLogs   MedicalLog[] 
-}
-
-model Patient {
-  id          String   @id @default(uuid())
-  name        String
-  birthDate   DateTime
-  medicalLogs MedicalLog[]
-  consultations ScheduledConsultation[]
-}
-
-model ScheduledConsultation {
-  id        String @id @default(uuid())
-  doctor    User   @relation(fields: [doctorId], references: [id])
-  doctorId  String
-  patient   Patient @relation(fields: [patientId], references: [id])
-  patientId String
-  date      DateTime
-  status    ConsultationStatus
+  id String @id @default(uuid())
+  type Role @default(USER)
+  name String
+  email String @unique
+  password String
+  cpf String? @unique
+  address String?
+  phone String?
+  birthDate DateTime?
+  moreInfo String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  alergias Alergias[]
+  appointments Appointment[] @relation("UserAppointments") // Adicionando o nome da relação
+  medicAppointments Appointment[] @relation("MedicAppointments")
 }
 
-model MedicalLog {
-  id          String   @id @default(uuid())
-  patient   Patient  @relation(fields: [patientId], references: [id])
-  patientId String
-  doctor    User     @relation(fields: [doctorId], references: [id])
-  doctorId  String
-  description String
-  type      LogType
-  createdAt   DateTime @default(now())
+model Appointment {
+  id Int @id @default(autoincrement())
+  date DateTime
+  userId String
+  user User @relation(fields: [userId], references: [id], name: "UserAppointments") // Adicionando o nome da relação
+  medicId String
+  medic User @relation(fields: [medicId], references: [id], name: "MedicAppointments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
+model Alergias {
+  id Int @id @default(autoincrement())
+  name String
+  descricao String?
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  @@unique([userId, name])
 }
 
 enum Role {
-  MEDIC
-  ASSISTANT
+  ADMIN
+  USER
   PATIENT
+  MEDIC
+  ASSISTENT
 }
-
-enum ConsultationStatus {
-  SCHEDULED
-  CANCELED
-  COMPLETED
-}
-
-enum LogType {
-  DIAGNOSIS
-  EXAM
-  ALLERGY
+enum Status {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
 }
