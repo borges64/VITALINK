@@ -90,3 +90,22 @@ export const updateUser = async (req: FastifyRequest, reply: FastifyReply) => {
         logger.error(error)
     }
 }
+export const deleteUser = async (req: FastifyRequest, reply: FastifyReply) => {
+    try { 
+        const { id } = req.params as any;
+        const userExists = await prisma.user.findUnique({ where: { id: id } });
+        
+        if (!userExists) {
+            return reply.status(404).send({ message: "User not found" });
+        }
+        await prisma.user.delete({
+            where: {
+                id: id
+            }
+        })
+        console.log("USUARIO DELETADO COM SUCESSO")
+        reply.send("User deleted successfully")
+    } catch (error) {
+        logger.error(error)
+    }
+}
