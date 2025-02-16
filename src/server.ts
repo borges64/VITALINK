@@ -1,11 +1,12 @@
 import Fastify from "fastify"
 import UserRoutes from "./routes/user.router";
+import { appointmentRoutes } from "./routes/appointment.router";
 // import { appointmentRoutes } from "./routes/appointment.router";
 
 const server = Fastify();
 
 server.register(UserRoutes)
-// server.register(appointmentRoutes)
+server.register(appointmentRoutes)
 
 server.listen({
     port: 3000

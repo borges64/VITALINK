@@ -1,9 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { createAppointment, getAllAppointments, completedAppointment, cancelAppointment } from '../handlers/appointment.handler';
+import { createAppointment, getAppointments } from '../handlers/appointments.handler';
 
 export async function appointmentRoutes(fastify: FastifyInstance) {
-    fastify.post('/appointments', createAppointment);
-    fastify.get('/appointments', getAllAppointments);
-    fastify.put('/appointments/:id/completed', completedAppointment);
-    fastify.put('/appointments/:id/cancel', cancelAppointment);
+    fastify.post('/appointments/new', createAppointment);
+    fastify.get('/appointments/get', getAppointments)
 }
