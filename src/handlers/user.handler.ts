@@ -15,27 +15,58 @@ export const newUser = async (req: FastifyRequest, reply: FastifyReply) => {
                 email: data.email
             }
         })
-        if (verifyUser) {
-            reply.code(400).send({ message: "User already exists" });
-            return;
-        }
-        const newUser = await prisma.user.create({
-            data: {
-                name: data.name,
-                email: data.email,
-                password: data.password,
-                type: data.type || "USER",
-                cpf: data.cpf,
-                address: data.address,
-                phone: data.phone,
-                birthDate: data.birthDate,
-                moreInfo: data.moreInfo,
-            }
-        })
-        reply.code(201).send({
-            message: "Usuário criado com sucesso",
-            data: newUser
-        })
+        // if (verifyUser) {
+        //     reply.code(400).send({ message: "Usuário já existente na base de dados" });
+        //     return;
+        // }
+
+        // if(data.type === "ASSISTENT") {
+        //     const { medicId } = req.body as any;
+        //     if(!medicId) return reply.status(400).send("Assitentes devem estar associados a um médico")
+        //     const medic = await prisma.user.findUnique({
+        //         where: { id: medicId }
+        //     })
+        //     // if(!medic || medic.type !== "MEDIC") {
+        //     //     return reply.status(400).send({message: "Médico não encontrado ou ID invalido"})
+        //     // }
+        //     const newAssistant = await prisma.assistant.create({
+        //         data: {
+        //             name: data.name,
+        //             email: data.email,
+        //             password: data.password,
+        //             cpf: data.cpf,
+        //             address: data.address,
+        //             phone: data.phone,
+        //             birthDate: data.birthDate,
+        //             moreInfo: data.moreInfo,
+        //             medicId: medicId
+        //         }
+        //     });
+
+        //     reply.code(201).send({
+        //         message: "Assistente criado com sucesso",
+        //         data: newAssistant
+        //     });
+        //     return;
+        // }
+
+        // const newUser = await prisma.user.create({
+        //     data: {
+        //         name: data.name,
+        //         email: data.email,
+        //         password: data.password,
+        //         type: data.type || "USER",
+        //         cpf: data.cpf,
+        //         address: data.address,
+        //         phone: data.phone,
+        //         birthDate: data.birthDate,
+        //         moreInfo: data.moreInfo,
+        //     }
+        // })
+        // reply.code(201).send({
+        //     message: "Usuário criado com sucesso",
+        //     data: newUser
+        // })
     } catch (error) {
         logger.error(error)
     }

@@ -4,4 +4,5 @@ import { createAppointment, getAppointments } from '../handlers/appointments.han
 export async function appointmentRoutes(fastify: FastifyInstance) {
     fastify.post('/appointments/new', createAppointment);
     fastify.get('/appointments/get', getAppointments)
+    // fastify.delete("/appointments/del/:id", deleteAppointment)
 }

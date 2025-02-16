@@ -13,54 +13,114 @@ datasource db {
   url      = "file:./dev.db" // Aqui estamos definindo o banco de dados SQLite para ser armazenado em um arquivo chamado dev.db
 }
 
+
+// Modelo de Usuário genérico, incluindo ADMIN como tipo especial de usuário
 model User {
-  id String @id @default(uuid())
-  type Role @default(USER)
-  name String
-  email String @unique
-  password String
-  cpf String? @unique
-  address String?
-  phone String?
+  id        String   @id @default(uuid())
+  role      Role
+  name      String
+  email     String   @unique
+  password  String
+  cpf       String?  @unique
+  address   String?
+  phone     String?
   birthDate DateTime?
-  moreInfo String?
+  moreInfo  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  alergias Alergias[]
-  appointments Appointment[] @relation("UserAppointments") // Adicionando o nome da relação
-  medicAppointments Appointment[] @relation("MedicAppointments")
+
+  // Relacionamentos com Clínicas
+  clinicsAsMedic     Clinic[] @relation("MedicClinics")
+  clinicsAsAssistant Clinic?  @relation("AssistantClinic", fields: [clinicId], references: [id])
+  clinicsAsPatient   Clinic?  @relation("PatientClinic", fields: [clinicId], references: [id])
+  clinicId           String?
+
+  // Relacionamentos com Consultas e Logs Médicos
+  appointmentsAsPatient  Appointment[] @relation("PatientAppointments")
+  appointmentsAsDoctor   Appointment[] @relation("DoctorAppointments")
+  appointmentsAsAssistant Appointment[] @relation("AssistantAppointments")
+
+  medicalLogsAsDoctor  MedicalLog[] @relation("DoctorLogs")
+  medicalLogsAsPatient MedicalLog[] @relation("PatientLogs")
 }
 
+// Modelo de Clínica
+model Clinic {
+  id        String   @id @default(uuid())
+  name      String
+  cnpj      String   @unique
+  address   String
+  phone     String
+  email     String   @unique
+  moreInfo  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  medics       User[] @relation("MedicClinics")
+  assistants   User[] @relation("AssistantClinic")
+  patients     User[] @relation("PatientClinic")
+  appointments Appointment[]
+  medicalLogs  MedicalLog[]
+}
+
+// Modelo de Consulta
 model Appointment {
-  id Int @id @default(autoincrement())
-  date DateTime
-  userId String
-  user User @relation(fields: [userId], references: [id], name: "UserAppointments") // Adicionando o nome da relação
-  medicId String
-  medic User @relation(fields: [medicId], references: [id], name: "MedicAppointments")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  moreInfo String?
+  id         String   @id @default(uuid())
+  date       DateTime
+  status     ConsultationStatus
+  moreInfo   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relacionamentos
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+  clinicId String
+
+  patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
+  patientId String
+
+  doctor   User @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  doctorId String
+
+  assistant  User? @relation("AssistantAppointments", fields: [assistantId], references: [id])
+  assistantId String?
 }
 
-model Alergias {
-  id Int @id @default(autoincrement())
-  name String
-  descricao String?
-  userId String
-  user User @relation(fields: [userId], references: [id])
-  @@unique([userId, name])
+// Modelo de Log Médico
+model MedicalLog {
+  id          String   @id @default(uuid())
+  description String
+  type        LogType
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+  clinicId String
+
+  patient  User   @relation("PatientLogs", fields: [patientId], references: [id])
+  patientId String
+
+  doctor   User   @relation("DoctorLogs", fields: [doctorId], references: [id])
+  doctorId String
 }
 
+// Enums para controle de status e tipos de logs
 enum Role {
   ADMIN
-  USER
-  PATIENT
   MEDIC
-  ASSISTENT
+  ASSISTANT
+  PATIENT
 }
-enum Status {
-  PENDENTE
-  CONFIRMADO
-  CANCELADO
+
+enum ConsultationStatus {
+  SCHEDULED
+  CANCELED
+  COMPLETED
+}
+
+enum LogType {
+  DIAGNOSIS
+  EXAM
+  ALLERGY
 }
